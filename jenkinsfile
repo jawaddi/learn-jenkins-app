@@ -21,11 +21,24 @@ pipeline {
             }
         }
         stage("Test"){
+            agent{
+                docker{
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     echo "Check if build/index.html exists"
+                    if [ -d build ]; then
+                      echo " build folder exists"
+                    else
+                      echo "build folder missing"
+                      exit 1
+                    fi
                     cd build
                     test -f index.html && echo "Index exists" || echo "Index missing"
+                    npm test
                 '''
             }
         }
