@@ -21,11 +21,13 @@ pipeline {
             }
         }
         stage("Test"){
-            sh '''
-                 echo "check if files exist"
-                 cd build
-                 test -f index.html && echo "Index exists" || echo "Index missing"
-            '''
+            steps {
+                sh '''
+                    echo "Check if build/index.html exists"
+                    cd build
+                    test -f index.html && echo "Index exists" || echo "Index missing"
+                '''
+            }
         }
 
     }
