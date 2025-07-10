@@ -2,68 +2,70 @@ pipeline {
     agent any
 
     stages {
-        // stage('Build') {
-        //     agent{
-        //         docker{
-        //             image 'node:18-alpine'
-        //             reuseNode true
-        //         }
-        //     }
-        //     steps {
-        //         sh '''
-        //             ls -la
-        //             node --version
-        //             npm --version
-        //             npm ci
-        //             npm run build
-        //             ls -la
-        //         '''
-        //     }
-        // }
-        stage("Test"){
-            agent{
-                docker{
+        stage('Build') {
+            agent {
+                docker {
                     image 'node:18-alpine'
                     reuseNode true
                 }
             }
             steps {
                 sh '''
-                    echo "Check if build/index.html exists"
+                    npm ci
+                    npm run build
+                '''
+            }
+        }
+
+        stage("Test") {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
                     if [ -d build ]; then
-                      echo " build folder exists"
+                      echo "Build folder exists"
                     else
-                      echo "build folder missing"
+                      echo "Build folder missing"
                       exit 1
                     fi
-                    cd build
-                    test -f index.html && echo "Index exists" || echo "Index missing"
+
+                    test -f build/index.html && echo "Index exists" || exit 1
+
                     npm test
                 '''
             }
         }
 
-        stage("E2E"){
-            agent{
-                docker{
+        stage("E2E") {
+            agent {
+                docker {
                     image 'mcr.microsoft.com/playwright:v1.53.0-noble'
                     reuseNode true
                 }
             }
             steps {
                 sh '''
-                    npm install serve
-                    node_modules/.bin/serve -s build &
-                    sleep 15
-                    npx playwright test
+                    npm install serve wait-on
+
+                    node_modules/.bin/serve -s build -l 3000 &
+
+                    # Wait until the local server is actually up
+                    npx wait-on http://localhost:3000
+
+                    # Run the Playwright tests
+                    npx playwright test --reporter=junit
                 '''
             }
         }
-
     }
-    post{
-        always{
-            junit 'test-results/junit.xml'
+
+    post {
+        always {
+            junit 'playwright-report/test-results/*.xml'
         }
     }
 }
