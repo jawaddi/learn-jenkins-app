@@ -1,9 +1,9 @@
 pipeline {
     agent any
 
-    environment{
+    environment {
         NETLIFY_PROJECT_ID = '2970a7fc-569b-46b3-a9b5-f33fa89cde52'
-        NETLIFY_TOKEN =  credentials('NETLIFY-TOKEN')
+        NETLIFY_TOKEN = credentials('NETLIFY-TOKEN')
     }
 
     stages {
@@ -59,13 +59,8 @@ pipeline {
         //     steps {
         //         sh '''
         //             npm install serve wait-on
-
         //             node_modules/.bin/serve -s build -l 3000 &
-
-        //             # Wait until the local server is actually up
         //             npx wait-on http://localhost:3000
-
-        //             # Run the Playwright tests
         //             npx playwright test --reporter=junit
         //         '''
         //     }
@@ -84,13 +79,13 @@ pipeline {
                 }
             }
             steps {
-                sh '''
+                sh """
                     npm install netlify-cli
                     node_modules/.bin/netlify --version
-                    echo "deploy to Production $NETLIFY_PROJECT_ID"
+                    echo "deploy to Production ${NETLIFY_PROJECT_ID}"
                     node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
-                '''
+                    node_modules/.bin/netlify deploy --dir=build --prod --auth=${NETLIFY_TOKEN} --site=${NETLIFY_PROJECT_ID}
+                """
             }
         }
     }
