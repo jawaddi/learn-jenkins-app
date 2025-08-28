@@ -20,55 +20,70 @@ pipeline {
             }
         }
 
-        // stage("Test") {
-        //     agent {
-        //         docker {
-        //             image 'node:18-alpine'
-        //             reuseNode true
-        //         }
-        //     }
-        //     steps {
-        //         sh '''
-        //             if [ -d build ]; then
-        //               echo "Build folder exists"
-        //             else
-        //               echo "Build folder missing"
-        //               exit 1
-        //             fi
+        stage("Test") {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    if [ -d build ]; then
+                      echo "Build folder exists"
+                    else
+                      echo "Build folder missing"
+                      exit 1
+                    fi
 
-        //             test -f build/index.html && echo "Index exists" || exit 1
+                    test -f build/index.html && echo "Index exists" || exit 1
 
-        //             npm test
-        //         '''
-        //     }
-        // }
+                    npm test
+                '''
+            }
+        }
 
-        // stage("E2E") {
-        //     agent {
-        //         docker {
-        //             image 'mcr.microsoft.com/playwright:v1.39.0-focal'
-        //             reuseNode true
-        //         }
-        //     }
-        //     steps {
-        //         sh '''
-        //             npm install serve wait-on
+        stage("E2E") {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-focal'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install serve wait-on
 
-        //             node_modules/.bin/serve -s build -l 3000 &
+                    node_modules/.bin/serve -s build -l 3000 &
 
-        //             # Wait until the local server is actually up
-        //             npx wait-on http://localhost:3000
+                    # Wait until the local server is actually up
+                    npx wait-on http://localhost:3000
 
-        //             # Run the Playwright tests
-        //             npx playwright test --reporter=junit
-        //         '''
-        //     }
-        // }
+                    # Run the Playwright tests
+                    npx playwright test --reporter=junit
+                '''
+            }
+            post {
+                always {
+                    junit 'playwright-report/test-results/*.xml'
+                }
+                }
+        }
     }
 
-    // post {
-    //     always {
-    //         junit 'playwright-report/test-results/*.xml'
-    //     }
-    // }
+    stage('Deploy') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install -g netlify-cli
+                    netlify --version
+                '''
+            }
+        }
+
 }
