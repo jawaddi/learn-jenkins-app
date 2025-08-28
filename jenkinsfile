@@ -13,8 +13,8 @@ pipeline {
                 sh '''
                     ls -la
                     npm --version
-                    nodes --version
-                    nmp ci
+                    nodes= --version
+                    npm ci
                     ls -la
                 '''
             }
